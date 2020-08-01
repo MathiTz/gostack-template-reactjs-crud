@@ -27,6 +27,13 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
+      const { data } = await api.get('/foods');
+
+      const foodAvailable = data.filter(
+        (food: IFoodPlate) => food.available === true,
+      );
+
+      setFoods(foodAvailable);
       // TODO LOAD FOODS
     }
 
@@ -37,6 +44,16 @@ const Dashboard: React.FC = () => {
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
     try {
+      const newFood: IFoodPlate = {
+        id: foods[foods.length - 1] ? foods[foods.length - 1].id + 1 : 1,
+        name: food.name,
+        image: food.image,
+        price: food.price,
+        description: food.description,
+        available: true,
+      };
+      await api.post('/foods', newFood);
+      setFoods([...foods, newFood]);
       // TODO ADD A NEW FOOD PLATE TO THE API
     } catch (err) {
       console.log(err);
@@ -46,10 +63,29 @@ const Dashboard: React.FC = () => {
   async function handleUpdateFood(
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
+    const newFoodList = foods.map(currentFood => {
+      if (currentFood.id !== editingFood.id) {
+        return currentFood;
+      }
+      return {
+        ...food,
+        id: editingFood.id,
+        available: editingFood.available,
+      };
+    });
+    setFoods(newFoodList);
+    await api.put(`/foods/${editingFood.id}`, {
+      ...food,
+      id: editingFood.id,
+      available: editingFood.available,
+    });
     // TODO UPDATE A FOOD PLATE ON THE API
   }
 
   async function handleDeleteFood(id: number): Promise<void> {
+    await api.delete(`/foods/${id}`);
+    const newFoodList = foods.filter(currentFood => currentFood.id !== id);
+    setFoods(newFoodList);
     // TODO DELETE A FOOD PLATE FROM THE API
   }
 
@@ -62,6 +98,8 @@ const Dashboard: React.FC = () => {
   }
 
   function handleEditFood(food: IFoodPlate): void {
+    setEditingFood(food);
+    toggleEditModal();
     // TODO SET THE CURRENT EDITING FOOD ID IN THE STATE
   }
 
